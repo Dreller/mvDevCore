@@ -1,6 +1,6 @@
 SUBROUTINE DC.CREATE.FILE.SUBR(INPUT.PARMS, RESPONSE)
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-* Name:     DC.DREATE.FILE.SUBR
+* Name:     DC.CREATE.FILE.SUBR
 * Type:     Subroutine
 * Author:   dreller
 * Date:     Apr 13, 2020

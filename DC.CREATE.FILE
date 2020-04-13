@@ -13,6 +13,88 @@
 * - DC.CREATE.FILE
 *   Will create files defined in 'dcArtifFiles.txt' file.
 * - DC.CREATE.FILE {filename}
-*   Will create files defined in {filename}
+*   Will create files defined in {/path/to/file}
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+EQU EQU$MYNAME      TO "DC.CREATE.FILE"
+
+! Program mainline 
+    GOSUB 1000  ;* Get the file from sentence
+    GOSUB 2000  ;* Validate the file
+    GOSUB 3000  ;* Open the file
+
+
+    RETURN
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+! Get the file from sentence
+1000:
+
+    FILE.PATH = ""
+    ERR.TEMP  = ""
+    CALL DC.SENTENCE.SUBR(SENTENCE(), EQU$MYNAME, FILE.PATH, ERR.TEMP)
+
+!---- If no file is passed, use the default one
+        IF FILE.PATH = "" THEN
+            FILE.PATH = @PATH:@DS:"DEVCORE.PGM":@DS:"dcArtifFiles.txt"
+        END
+RETURN 
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Validate the target file 
+2000:
+
+!-- Is the file exists ?
+    VALID.FLAG = OSPATH(FILE.PATH, 2)
+    IF NOT(VALID.FLAG) THEN 
+        DISPLAY "Path not found: ":FILE.PATH
+        RETURN
+    END
+
+!-- If it's a real file (not a directory)
+    VALID.FLAG = OSPATH(FILE.PATH, 16)
+    IF NOT(VALID.FLAG) THEN 
+        DISPLAY "This is not a file: ":FILE.PATH 
+        RETURN
+    END
+RETURN 
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Open the file 
+3000: 
+
+    OPENSEQ FILE.PATH TO SOURCE.FILE THEN GOTO 3010
+    DISPLAY "Unable to open file: ":FILE.PATH 
+    RETURN  
+
+3010:
+    LOOP
+        READSEQ SOURCE.ITEM FROM SOURCE.FILE ELSE GOTO 3020
+        GOSUB  4000
+    REPEAT
+
+3020:
+    CLOSE SOURCE.FILE 
+
+RETURN
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Create the file 
+4000: 
+
+!-- Transform SOURCE.ITEM to the required MV for CD.CREATE.FILE.SUBR
+    RESPONSE    = ""
+    PARMS       = ""
+    PARMS<1>    = FIELD(SOURCE.ITEM,",", 1, 1)
+    PARMS<2>    = FIELD(SOURCE.ITEM,",", 2, 1)
+    PARMS<3>    = FIELD(SOURCE.ITEM,",", 3, 1)
+    PARMS<4>    = FIELD(SOURCE.ITEM,",", 4, 1)
+
+    DISPLAY "Creating file, ":PARMS<1>:"-Type, Name '":PARMS<2>:"'...  ":
+    
+    CALL DC.CREATE.FILE.SUBR(PARMS, RESPONSE)
+    RESPONSE.TEXT = "OK"
+    ERROR.FLAG = (RESPONSE # "0")
+    IF ERROR.FLAG THEN 
+        CALL !ERRTEXT(RESPONSE.TEXT, RESPONSE)
+    END
+    DISPLAY RESPONSE.TEXT
+RETURN 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+END  
