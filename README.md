@@ -8,4 +8,7 @@ You are welcome to submit any king of issues, I will do my best to answer and ad
 This project exists to supply various tools for developers in MV systems.
 
 ## Actually working on... 
+- Creating files automatically. `DC.CREATE.FILE.SUBR`.
+
+### Goal
 - Create files, DICT items and records from a simple list of items, to help creating required artifacts.

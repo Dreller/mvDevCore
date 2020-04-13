@@ -1,0 +1,166 @@
+SUBROUTINE DC.CREATE.FILE.SUBR(INPUT.PARMS, RESPONSE)
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Name:     DC.DREATE.FILE.SUBR
+* Type:     Subroutine
+* Author:   dreller
+* Date:     Apr 13, 2020
+* Git:      mvDevCore
+* System:   openQM 3.4.18
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* Create files in the account.
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* The input parameters variables should be a MV variable containing
+* the following:
+*
+*   MV#     For a F-Type        For a Q-Type
+*   ---     ------------------- -------------------
+*   1       F                   Q
+*   2       File name           Q-Pointer name
+*   3       DYNAMIC|DIRECTORY   Target Account name
+*   4       -                   Target File Name
+*
+* The followings are the possible RESPONSE returned by the subroutine
+* Always try to get along with ERR.H from SYSCOM.
+*
+*   Response    Details
+*   ----------- -----------------------------------
+*   0           Item created.
+*   14          ER$NO.ACC   Account name not in register.
+*   1000        ER$PARAMS   Invalid parameters.
+*   3005        ER$NDYN     Not a dynamic file.
+*   3003        ER$FNF      File not found.
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+$INCLUDE DC.INC.H
+$INCLUDE SYSCOM ERR.H
+
+* 1) File type
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+!-- Identify the type to create (F or Q).  Read the value from 
+!-- INPUT.PARMS, MV#1.
+
+    DETECT.FLAG = @FALSE
+    F.FLAG      = @FALSE 
+    Q.FLAG      = @FALSE 
+
+    VOC.TYPE = INPUT.PARMS<1>
+    F.FLAG      = (VOC.TYPE = "F")
+    Q.FLAG      = (VOC.TYPE = "Q")
+
+    IF F.FLAG OR Q.FLAG THEN 
+        DETECT.FLAG = @TRUE 
+    END 
+
+!---- If DETECT.FLAG is FALSE, it means the requested type is not a
+!---- F or Q VOC Type.  Return error # 1000 (ER$PARMS).
+      IF NOT(DETECT.FLAG) THEN 
+        RESPONSE = ER$PARAMS
+        RETURN 
+      END 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+* 2) Check if Q-Pointers to Master Account are set
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+!-- Look for DC$QP.ACC in VOC.
+    FOUND.FLAG = @FALSE 
+    READ QPRT.ITEM FROM @VOC, DC$QP.ACC THEN FOUND.FLAG = @TRUE 
+    IF NOT(FOUND.FLAG) THEN 
+        QPRT.ITEM = "Q":@AM:DC$MSTR.ACCT:@AM:DC$ACCT.FILE
+        WRITE QPRT.ITEM TO @VOC, DC$QP.ACC
+    END
+
+!-- Look for DC$QP.VOC in VOC.
+    FOUND.FLAG = @FALSE 
+    READ QPRT.ITEM FROM @VOC, DC$QP.VOC THEN FOUND.FLAG = @TRUE 
+    IF NOT(FOUND.FLAG) THEN 
+        QPRT.ITEM = "Q":@AM:DC$MSTR.ACCT:@AM:"VOC"
+        WRITE QPRT.ITEM TO @VOC, DC$QP.VOC
+    END
+
+    
+
+* 3) Validate parameters
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+!-- Check F-Type.  For Q-Type, jump to 210.
+    IF Q.FLAG THEN 
+        GOTO 210
+    END  
+
+    VOC.NAME      = INPUT.PARMS<2>
+    VOC.FTYPE     = INPUT.PARMS<3>
+
+!---- Special validations for F-Types
+!---- Is File Type is valid ?  If not, return error # 3005 (ER$NDYN)
+      VALID.FLAG = (VOC.FTYPE = "DYNAMIC" OR VOC.FTYPE="DIRECTORY")
+      IF NOT(VALID.FLAG) THEN 
+          RESPONSE = ER$NDYN
+          RETURN 
+      END 
+
+!---- Jump to 250 for common validations.
+      GOTO 250 
+
+!-- Check Q-Type.
+210: 
+
+    VOC.NAME      = INPUT.PARMS<2>
+    VOC.ACCOUNT   = INPUT.PARMS<3>
+    VOC.TARGET    = INPUT.PARMS<4>
+
+!---- Special validations for Q-Types
+!---- Is Account Name exists ?
+      FOUND.FLAG = @FALSE
+      FOUND.FLAG  = (TRANS(DC$QP.ACC, VOC.ACCOUNT, 1, "X") # "")
+      IF NOT(FOUND.FLAG) THEN 
+        RESPONSE = ER$NO.ACC
+        RETURN 
+      END 
+
+!---- Is target file exists in target account ?
+      FOUND.FLAG = @FALSE
+      FOUND.FLAG  = (TRANS(DC$QP.VOC, VOC.TARGET, 1, "X") # "")
+      IF NOT(FOUND.FLAG) THEN 
+        RESPONSE = ER$FNF
+        RETURN 
+      END 
+
+
+!-- Common validations.
+250: 
+
+!---- Is the file already exists in VOC ?
+      FOUND.FLAG = @FALSE
+      FOUND.FLAG  = (TRANS("VOC", VOC.NAME, 1, "X") # "")
+      IF NOT(FOUND.FLAG) THEN 
+        RESPONSE = ER$EXISTS
+        RETURN 
+      END 
+
+
+* 4) Create the File/Q-Pointer
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+!-- Create file 
+    IF F.FLAG THEN 
+        EXECUTE "CREATE.FILE ":VOC.NAME:" ":VOC.FTYPE CAPTURING JUNK
+        RESPONSE = 0
+        RETURN 
+    END 
+
+
+!-- Create Q-Pointer
+    IF Q.FLAG THEN 
+        VOC.ITEM = "Q":@AM:VOC.ACCOUNT:@AM:VOC.TARGET
+        WRITE VOC.ITEM TO @VOC, VOC.NAME
+        RESPONSE = 0 
+        RETURN 
+    END 
+
+!---- At this point, something went wrong 
+    RESPONSE = ER$FAILED
+    RETURN
+END
