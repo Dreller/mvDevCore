@@ -7,7 +7,7 @@ SUBROUTINE DC.CREATE.FILE.SUBR(INPUT.PARMS, RESPONSE)
 * Git:      mvDevCore
 * System:   openQM 3.4.18
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-* Create files in the account.
+* Create files in the account.  Sub for DC.CREATE.FILE.
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 * The input parameters variables should be a MV variable containing
 * the following:
