@@ -1,0 +1,36 @@
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Name:     DC.HEAD
+* Type:     Program
+* Author:   dreller
+* Date:     Apr 13, 2020
+* Git:      mvDevCore
+* System:   openQM 3.4.18
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* Display a nice header for DevCore programs.
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+EQU EQU$MYNAME      TO "DC.HEAD"
+EQU EQU$BANNER      TO "D E V   C O R E   U T I L I T Y"
+EQU EQU$DATETIME    TO OCONV(@DATE,"DDMAY":@VM:"MCL"):" ":OCONV(@TIME,"MTS")
+EQU EQU$LOGNAME     TO @LOGNAME:" on ":@HOSTNAME
+
+DATETIME.LEN = LEN(EQU$DATETIME)
+LOGNAME.LEN  = LEN(EQU$LOGNAME)
+BANNER.LEN   = LEN(EQU$BANNER)
+
+SEPARATOR    = STR("- ",40):"-"
+
+BANNER.SPCS  = (80-BANNER.LEN)/2
+DTIME.SPCS   = 80-DATETIME.LEN-LOGNAME.LEN-1
+
+EXECUTE "CLR"
+DISPLAY SEPARATOR
+DISPLAY EQU$DATETIME:SPACE(DTIME.SPCS):EQU$LOGNAME
+DISPLAY SEPARATOR
+DISPLAY 
+DISPLAY SPACE(BANNER.SPCS):EQU$BANNER:SPACE(BANNER.SPCS)
+DISPLAY 
+DISPLAY SEPARATOR
+
+END

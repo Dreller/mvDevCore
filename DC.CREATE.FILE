@@ -18,13 +18,18 @@
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 EQU EQU$MYNAME      TO "DC.CREATE.FILE"
 
-! Program mainline 
+! Pre-actions
+    EXECUTE "DC.HEAD"
+
+! Program mainline
     GOSUB 1000  ;* Get the file from sentence
     GOSUB 2000  ;* Validate the file
     GOSUB 3000  ;* Open the file
 
-
-    RETURN
+! Post-actions 
+    !undefined
+    
+RETURN
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 ! Get the file from sentence
 1000:
