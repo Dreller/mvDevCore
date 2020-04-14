@@ -1,0 +1,56 @@
+SUBROUTINE DC.SENTENCE.SUBR(INPUT.SENTENCE, CALLER.NAME, RESPONSE, RESPONSE.ERROR)
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Name:     DC.SENTENCE.SUBR
+* Type:     Subroutine
+* Author:   dreller
+* Date:     Apr 13, 2020
+* Git:      mvDevCore
+* System:   openQM 3.4.18
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* Extract values passed by @SENTENCE.
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* in    INPUT.SENTENCE      @SENTENCE from program that need infos.
+* in    CALLER.NAME         Name of program who called this one.
+* out   RESPONSE        MV  Values after program name in sentence.
+* out   ERR                 Error message if any.
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+!-- Count how many values un the sentence
+    SENTENCE.COUNT = DCOUNT(INPUT.SENTENCE," ")
+
+!-- Change the sentence so a dynamic array
+    SENTENCE.ARRAY = ""
+    I = 0 
+    FOR I = 1 TO SENTENCE.COUNT 
+        SENTENCE.ARRAY<-1> = FIELD(INPUT.SENTENCE, " ", I, 1)
+    NEXT I
+
+!-- Search the Caller Name in the array.
+    CALLER.NDX = 0
+    LOCATE(CALLER.NAME, SENTENCE.ARRAY;CALLER.NDX) ELSE CALLER.NDX=0
+    IF CALLER.NDX = 0 THEN
+        RESPONSE.ERROR = "Caller name not found."
+        RESPONSE = ""
+        RETURN 
+    END 
+
+!--  No values to return
+     IF CALLER.NDX = SENTENCE.COUNT THEN 
+        RESPONSE.ERROR = "No value after caller name."
+        RESPONSE = ""
+        RETURN
+     END
+
+!---- For each values after Caller Name, add value to array
+      RESPONSE.ARRAY = ""
+      I = 0
+      FOR I = CALLER.NDX+1 TO SENTENCE.COUNT  
+        RESPONSE.ARRAY<-1> = SENTENCE.ARRAY<I>
+      NEXT I
+
+!-- Return Response array
+    RESPONSE = RESPONSE.ARRAY 
+
+RETURN  
+END  
