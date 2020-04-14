@@ -19,7 +19,7 @@ tbd
 
 ### What I have learnt
 - Had to use `OPTION CATALOGUE.LOCAL` because openQM copied the program in a private space instead creating the VOC.
-- Built a Paragraph to quickly compile and run a program, see [Gist VOB B](https://gist.github.com/dreller2034/8fce9cc4dc531f72748d30aef8f532e4).
+- Built a Paragraph to quickly compile and run a program, see [Gist VOC B](https://gist.github.com/dreller2034/8fce9cc4dc531f72748d30aef8f532e4).
 - Used `ERR.H` from `SYSCOM` for error handling.
 - Tried to establish a comment design template for further usage.
 - Discovered we can use a @-Variable directly at TCL, example: `DISPLAY <<@LOGNAME>>`, pretty cool!
