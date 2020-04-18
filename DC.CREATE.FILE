@@ -19,7 +19,9 @@
 EQU EQU$MYNAME      TO "DC.CREATE.FILE"
 
 ! Pre-actions
-    EXECUTE "DC.HEAD"
+    HEAD = ""
+    HEAD<1> = "File creator"
+    CALL DC.HEAD(HEAD)
 
 ! Program mainline
     GOSUB 1000  ;* Get the file from sentence
