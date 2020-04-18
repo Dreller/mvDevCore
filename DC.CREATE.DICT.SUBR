@@ -1,0 +1,215 @@
+SUBROUTINE DC.CREATE.DICT.SUBR(INPUT.PARMS, MODE, RESPONSE)
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Name:     DC.CREATE.DICT.SUBR
+* Type:     Subroutine
+* Author:   dreller
+* Date:     Apr 18, 2020
+* Git:      mvDevCore
+* System:   openQM 3.4.18
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* Create dict items.  Sub for DC.CREATE.DICT.
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* The input parameters variables should be a MV variable containing
+* the following:
+*
+*   MV#     Description
+*   ---     ---------------------------------------------------------
+*   1       File in which the DICT item will be created.
+*   2       DICT Type.  Valid types are: D, S, A, I, X, PH.
+*   3       Attribute Number (for D, A, S).
+*   4       Justification/Alignment (L, R, T).
+*   5       Width (number from 1 to 100).
+*   6       Conversion (MCU, D2, etc.)
+*   7       Attribute Name.
+*   8       Column title.
+*   9       Short description (non-mandatory).
+*  10       Formula (Types S and I), Data (Type X), Phrase (Type PH).
+*
+* Modes:    "ADD" or empty: Add mode. Skip items that already exists.
+*           "UPD": Add if don't exists; Delete/Add if already exists.
+*
+* The followings are the possible RESPONSE returned by the subroutine
+* Always try to get along with ERR.H from SYSCOM.
+*
+*   Response    Details
+*   ----------- -----------------------------------------------------
+*   0           Item created.
+*   3           ER$ICOMP    I-type compilation error
+*   3003        ER$FNF      File not found
+*   3009        ER$VNF      VOC file record not F type
+*   3034        ER$BAD.DICT Bad dictionary entry
+*   6032        ER$EXISTS   Item already exists
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+$INCLUDE DC.INC.H
+$INCLUDE SYSCOM ERR.H
+
+* 0) Split DICT attributes from INPUT.PARMS for further checks.
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    IN.FILE     =   INPUT.PARMS<1>
+    IN.TYPE     =   INPUT.PARMS<2>
+    IN.NUMBER   =   INPUT.PARMS<3>
+    IN.ALIGN    =   INPUT.PARMS<4>
+    IN.WIDTH    =   INPUT.PARMS<5>
+    IN.OCONV    =   INPUT.PARMS<6>
+    IN.NAME     =   INPUT.PARMS<7>
+    IN.TITLE    =   INPUT.PARMS<8>
+    IN.DESC     =   INPUT.PARMS<9>
+    IN.FORMULA  =   INPUT.PARMS<10>
+
+
+* 1) Target file.
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    FOUND.FLAG  = @FALSE  
+    CHECK.VALUE = IN.FILE
+    FILE.TYPE = TRANS("VOC", TARGET.FILE, 1, "X")
+    FOUND.FLAG  = (FILE.TYPE # "")
+
+!-- File does not exists.
+    IF NOT(FOUND.FLAG) THEN 
+        RESPONSE = ER$FNF 
+        RETURN 
+    END 
+
+!-- Target file is not F-Type.
+    IF FILE.TYPE[1,1] # "F" THEN 
+        RESPONSE = ER$VNF 
+        RETURN  
+    END
+
+* 2) Check if item already exists
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    FOUND.FLAG = @FALSE
+    CHECK.VALUE = TRANS("DICT ":IN.FILE, IN.NAME, 1, "X")
+
+    
+
+
+* 2) Dictionary type
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+!-- Identify the type to create.
+
+    FOUND.FLAG  = @FALSE
+    DICT.TYPE   = INPUT.PARMS<2>
+
+!---- If type is not valid
+        VALID.TYPES = "D":@VM:"A":@VM:"S":@VM:"I":@VM:"X":@VM:"PH"
+        TEMP.NDX = 0
+        LOCATE(DICT.TYPE, VALID.TYPE, 1;TEMP.NDX) ELSE TEMP.NDX = 0
+        
+        IF TEMP.NDX = 0 THEN 
+            RESPONSE = ER$BAD.DICT  
+            RETURN
+        END
+
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+* 2) Check if Q-Pointers to Master Account are set
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+!-- Look for DC$QP.ACC in VOC.
+    FOUND.FLAG = @FALSE 
+    READ QPRT.ITEM FROM @VOC, DC$QP.ACC THEN FOUND.FLAG = @TRUE 
+    IF NOT(FOUND.FLAG) THEN 
+        QPRT.ITEM = "Q":@AM:DC$MSTR.ACCT:@AM:DC$ACCT.FILE
+        WRITE QPRT.ITEM TO @VOC, DC$QP.ACC
+    END
+
+!-- Look for DC$QP.VOC in VOC.
+    FOUND.FLAG = @FALSE 
+    READ QPRT.ITEM FROM @VOC, DC$QP.VOC THEN FOUND.FLAG = @TRUE 
+    IF NOT(FOUND.FLAG) THEN 
+        QPRT.ITEM = "Q":@AM:DC$MSTR.ACCT:@AM:"VOC"
+        WRITE QPRT.ITEM TO @VOC, DC$QP.VOC
+    END
+
+    
+
+* 3) Validate parameters
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+!-- Check F-Type.  For Q-Type, jump to 210.
+    IF Q.FLAG THEN 
+        GOTO 210
+    END  
+
+    VOC.NAME      = INPUT.PARMS<2>
+    VOC.FTYPE     = INPUT.PARMS<3>
+
+!---- Special validations for F-Types
+!---- Is File Type is valid ?  If not, return error # 3005 (ER$NDYN)
+      VALID.FLAG = (VOC.FTYPE = "DYNAMIC" OR VOC.FTYPE="DIRECTORY")
+      IF NOT(VALID.FLAG) THEN 
+          RESPONSE = ER$NDYN
+          RETURN 
+      END 
+
+!---- Jump to 250 for common validations.
+      GOTO 250 
+
+!-- Check Q-Type.
+210: 
+
+    VOC.NAME      = INPUT.PARMS<2>
+    VOC.ACCOUNT   = INPUT.PARMS<3>
+    VOC.TARGET    = INPUT.PARMS<4>
+
+!---- Special validations for Q-Types
+!---- Is Account Name exists ?
+      FOUND.FLAG = @FALSE
+      FOUND.FLAG  = (TRANS(DC$QP.ACC, VOC.ACCOUNT, 1, "X") # "")
+      IF NOT(FOUND.FLAG) THEN 
+        RESPONSE = ER$NO.ACC
+        RETURN 
+      END 
+
+!---- Is target file exists in target account ?
+      FOUND.FLAG = @FALSE
+      FOUND.FLAG  = (TRANS(DC$QP.VOC, VOC.TARGET, 1, "X") # "")
+      IF NOT(FOUND.FLAG) THEN 
+        RESPONSE = ER$FNF
+        RETURN 
+      END 
+
+
+!-- Common validations.
+250: 
+
+!---- Is the file already exists in VOC ?
+      FOUND.FLAG = @FALSE
+      FOUND.FLAG  = (TRANS("VOC", VOC.NAME, 1, "X") # "")
+      IF NOT(FOUND.FLAG) THEN 
+        RESPONSE = ER$EXISTS
+        RETURN 
+      END 
+
+
+* 4) Create the File/Q-Pointer
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+!-- Create file 
+    IF F.FLAG THEN 
+        EXECUTE "CREATE.FILE ":VOC.NAME:" ":VOC.FTYPE CAPTURING JUNK
+        RESPONSE = 0
+        RETURN 
+    END 
+
+
+!-- Create Q-Pointer
+    IF Q.FLAG THEN 
+        VOC.ITEM = "Q":@AM:VOC.ACCOUNT:@AM:VOC.TARGET
+        WRITE VOC.ITEM TO @VOC, VOC.NAME
+        RESPONSE = 0 
+        RETURN 
+    END 
+
+!---- At this point, something went wrong 
+    RESPONSE = ER$FAILED
+    RETURN
+END

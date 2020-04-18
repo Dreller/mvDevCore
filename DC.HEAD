@@ -1,3 +1,4 @@
+SUBROUTINE DC.HEAD(IN.DATA)
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * Name:     DC.HEAD
 * Type:     Program
@@ -8,7 +9,8 @@
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 * Display a nice header for DevCore programs.
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-* 
+* in    IN.DATA     MV1 = Program name
+*                   MV2 = Program description/note/warning.
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 EQU EQU$MYNAME      TO "DC.HEAD"
 EQU EQU$BANNER      TO "D E V   C O R E   U T I L I T Y"
@@ -32,5 +34,15 @@ DISPLAY
 DISPLAY SPACE(BANNER.SPCS):EQU$BANNER:SPACE(BANNER.SPCS)
 DISPLAY 
 DISPLAY SEPARATOR
+
+IF IN.DATA<1> # "" THEN 
+    DISPLAY IN.DATA<1>
+END  
+IF IN.DATA<2> # "" THEN 
+    DISPLAY IN.DATA<2>
+END 
+IF IN.DATA # "" THEN 
+    DISPLAY SEPARATOR
+END 
 
 END

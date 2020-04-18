@@ -1,26 +1,26 @@
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-* Name:     DC.DREATE.FILE
+* Name:     DC.DREATE.DICT
 * Type:     Program
 * Author:   dreller
-* Date:     Apr 13, 2020
+* Date:     Apr 18, 2020
 * Git:      mvDevCore
 * System:   openQM 3.4.18
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-* Create files in the account.  Pass to DC.CREATE.FILE.SUBR.
+* Create DICT items.  Pass to DC.CREATE.DICT.SUBR.
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 * 
 * Calling methods:
-* - DC.CREATE.FILE
-*   Will create files defined in 'dcArtifFiles.txt' file.
-* - DC.CREATE.FILE {filename}
-*   Will create files defined in {/path/to/file}
+* - DC.CREATE.DICT
+*   Will create DICT items defined in 'dcArtifDict.txt' file.
+* - DC.CREATE.DICT {filename}
+*   Will create DICT items defined in {/path/to/file}
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-EQU EQU$MYNAME      TO "DC.CREATE.FILE"
+EQU EQU$MYNAME      TO "DC.CREATE.DICT"
 
 ! Pre-actions
     HEAD = ""
-    HEAD<1> = "File creator"
+    HEAD<1> = "Dictionary creator/updater"
     CALL DC.HEAD(HEAD)
 
 ! Program mainline
@@ -42,7 +42,7 @@ RETURN
 
 !---- If no file is passed, use the default one
         IF FILE.PATH = "" THEN
-            FILE.PATH = @PATH:@DS:"DEVCORE.PGM":@DS:"dcArtifFiles.txt"
+            FILE.PATH = @PATH:@DS:"DEVCORE.PGM":@DS:"dcArtifDict.txt"
         END
 RETURN 
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
