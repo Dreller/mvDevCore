@@ -24,6 +24,8 @@ SUBROUTINE DC.CREATE.DICT.SUBR(INPUT.PARMS, MODE, RESPONSE)
 *   8       Column title.
 *   9       Short description (non-mandatory).
 *  10       Formula (Types S and I), Data (Type X), Phrase (Type PH).
+*  11       Multivalue flag:  M or S.
+*  12       Association with other attributes.
 *
 * Modes:    "ADD" or empty: Add mode. Skip items that already exists.
 *           "UPD": Add if don't exists; Delete/Add if already exists.
@@ -44,27 +46,34 @@ SUBROUTINE DC.CREATE.DICT.SUBR(INPUT.PARMS, MODE, RESPONSE)
 $INCLUDE DC.INC.H
 $INCLUDE SYSCOM ERR.H
 
+CREATE.MODE = @TRUE  
+UPDATE.MODE = @FALSE 
+    IF MODE = "UPD" THEN 
+        CREATE.MODE = @FALSE 
+        UPDATE.MODE = @TRUE
+    END
+
 * 0) Split DICT attributes from INPUT.PARMS for further checks.
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    IN.FILE     =   INPUT.PARMS<1>
-    IN.TYPE     =   INPUT.PARMS<2>
-    IN.NUMBER   =   INPUT.PARMS<3>
-    IN.ALIGN    =   INPUT.PARMS<4>
-    IN.WIDTH    =   INPUT.PARMS<5>
-    IN.OCONV    =   INPUT.PARMS<6>
-    IN.NAME     =   INPUT.PARMS<7>
-    IN.TITLE    =   INPUT.PARMS<8>
-    IN.DESC     =   INPUT.PARMS<9>
-    IN.FORMULA  =   INPUT.PARMS<10>
-
+    IN.FILE     =   INPUT.PARMS<DC$DICT.FILE>
+    IN.TYPE     =   INPUT.PARMS<DC$DICT.TYPE>
+    IN.NUMBER   =   INPUT.PARMS<DC$DICT.NUMBER>
+    IN.ALIGN    =   INPUT.PARMS<DC$DICT.ALIGN>
+    IN.WIDTH    =   INPUT.PARMS<DC$DICT.WIDTH>
+    IN.OCONV    =   INPUT.PARMS<DC$DICT.OCONV>
+    IN.NAME     =   INPUT.PARMS<DC$DICT.NAME>
+    IN.TITLE    =   INPUT.PARMS<DC$DICT.TITLE>
+    IN.DESC     =   INPUT.PARMS<DC$DICT.DESC>
+    IN.FORMULA  =   INPUT.PARMS<DC$DICT.FORMULA>
+    IN.MV       =   INPUT.PARMS<DC$DICT.MV>
+    IN.ASSOC    =   INPUT.PARMS<DC$DICT.ASSOC>
 
 * 1) Target file.
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     FOUND.FLAG  = @FALSE  
-    CHECK.VALUE = IN.FILE
-    FILE.TYPE = TRANS("VOC", TARGET.FILE, 1, "X")
+    FILE.TYPE = TRANS("VOC", IN.FILE, 1, "X")
     FOUND.FLAG  = (FILE.TYPE # "")
 
 !-- File does not exists.
@@ -82,132 +91,97 @@ $INCLUDE SYSCOM ERR.H
 * 2) Check if item already exists
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    FOUND.FLAG = @FALSE
+    EXIST.FLAG = @FALSE
     CHECK.VALUE = TRANS("DICT ":IN.FILE, IN.NAME, 1, "X")
+    EXIST.FLAG = (CHECK.VALUE # "")
 
-    
+    IF EXIST.FLAG AND CREATE.MODE THEN 
+        RESPONSE = ER$EXISTS 
+        RETURN
+    END
 
-
-* 2) Dictionary type
+* 3) Dictionary type
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 !-- Identify the type to create.
 
-    FOUND.FLAG  = @FALSE
-    DICT.TYPE   = INPUT.PARMS<2>
+    VALID.FLAG  = @FALSE
+    VALID.TYPES = "D":@VM:"A":@VM:"S":@VM:"I":@VM:"X":@VM:"PH"
+    TEMP.NDX = 0
 
-!---- If type is not valid
-        VALID.TYPES = "D":@VM:"A":@VM:"S":@VM:"I":@VM:"X":@VM:"PH"
-        TEMP.NDX = 0
-        LOCATE(DICT.TYPE, VALID.TYPE, 1;TEMP.NDX) ELSE TEMP.NDX = 0
-        
-        IF TEMP.NDX = 0 THEN 
-            RESPONSE = ER$BAD.DICT  
-            RETURN
-        END
+    LOCATE(IN.TYPE, VALID.TYPES, 1;TEMP.NDX) ELSE TEMP.NDX = 0
+    IF TEMP.NDX = 0 THEN 
+        RESPONSE = ER$BAD.DICT  
+        RETURN
+    END
 
 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 
-* 2) Check if Q-Pointers to Master Account are set
+* Build DICT record
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!-- Look for DC$QP.ACC in VOC.
-    FOUND.FLAG = @FALSE 
-    READ QPRT.ITEM FROM @VOC, DC$QP.ACC THEN FOUND.FLAG = @TRUE 
-    IF NOT(FOUND.FLAG) THEN 
-        QPRT.ITEM = "Q":@AM:DC$MSTR.ACCT:@AM:DC$ACCT.FILE
-        WRITE QPRT.ITEM TO @VOC, DC$QP.ACC
+DICT.ITEM = ""
+
+DICT.ITEM<1> = IN.TYPE 
+IF IN.DESC # "" THEN 
+    DICT.ITEM<1> = IN.TYPE:" ":IN.DESC 
+END
+
+!-- X and PH 
+    IF IN.TYPE = "X" OR IN.TYPE = "PH" THEN  
+        DICT.ITEM<2> = IN.FORMULA
+    GOTO 500
     END
 
-!-- Look for DC$QP.VOC in VOC.
-    FOUND.FLAG = @FALSE 
-    READ QPRT.ITEM FROM @VOC, DC$QP.VOC THEN FOUND.FLAG = @TRUE 
-    IF NOT(FOUND.FLAG) THEN 
-        QPRT.ITEM = "Q":@AM:DC$MSTR.ACCT:@AM:"VOC"
-        WRITE QPRT.ITEM TO @VOC, DC$QP.VOC
+!-- I-Descriptor 
+    IF IN.TYPE = "I" THEN 
+        DICT.ITEM<2> = IN.FORMULA
+        DICT.ITEM<3> = IN.OCONV 
+        DICT.ITEM<4> = IN.TITLE 
+        DICT.ITEM<5> = IN.WIDTH:IN.ALIGN
+        DICT.ITEM<6> = IN.MV 
+        DICT.ITEM<7> = IN.ASSOC
+    GOTO 500
     END
 
-    
+!-- D-Type 
+    IF IN.TYPE = "D" THEN 
+        DICT.ITEM<2> = IN.NUMBER 
+        DICT.ITEM<3> = IN.OCONV 
+        DICT.ITEM<4> = IN.TITLE 
+        DICT.ITEM<5> = IN.WIDTH:IN.ALIGN 
+        DICT.ITEM<6> = IN.MV 
+        DICT.ITEM<7> = IN.ASSOC
+    GOTO 500
+    END
 
-* 3) Validate parameters
-* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!-- A/S-Type 
+    IF IN.TYPE = "A" OR IN.TYPE = "S" THEN 
+        DICT.ITEM<2> = IN.NUMBER 
+        DICT.ITEM<3> = IN.TITLE 
+        DICT.ITEM<4> = IN.ASSOC 
+        DICT.ITEM<5> = ""
+        DICT.ITEM<6> = ""
+        DICT.ITEM<7> = IN.OCONV 
+        DICT.ITEM<8> = IN.FORMULA
+        DICT.ITEM<9> = IN.ALIGN
+        DICT.ITEM<10>= IN.WIDTH
+    GOTO 500
+    END
 
-!-- Check F-Type.  For Q-Type, jump to 210.
-    IF Q.FLAG THEN 
-        GOTO 210
-    END  
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Write record to DICT file 
+ 500: 
+    OPEN "DICT ":IN.FILE TO DICT.FILE ELSE STOP "CANNOT OPEN DICT!"
+    WRITE DICT.ITEM TO DICT.FILE, IN.NAME 
+    CLOSE DICT.FILE
 
-    VOC.NAME      = INPUT.PARMS<2>
-    VOC.FTYPE     = INPUT.PARMS<3>
+    RESPONSE = 0 
+    RETURN
 
-!---- Special validations for F-Types
-!---- Is File Type is valid ?  If not, return error # 3005 (ER$NDYN)
-      VALID.FLAG = (VOC.FTYPE = "DYNAMIC" OR VOC.FTYPE="DIRECTORY")
-      IF NOT(VALID.FLAG) THEN 
-          RESPONSE = ER$NDYN
-          RETURN 
-      END 
-
-!---- Jump to 250 for common validations.
-      GOTO 250 
-
-!-- Check Q-Type.
-210: 
-
-    VOC.NAME      = INPUT.PARMS<2>
-    VOC.ACCOUNT   = INPUT.PARMS<3>
-    VOC.TARGET    = INPUT.PARMS<4>
-
-!---- Special validations for Q-Types
-!---- Is Account Name exists ?
-      FOUND.FLAG = @FALSE
-      FOUND.FLAG  = (TRANS(DC$QP.ACC, VOC.ACCOUNT, 1, "X") # "")
-      IF NOT(FOUND.FLAG) THEN 
-        RESPONSE = ER$NO.ACC
-        RETURN 
-      END 
-
-!---- Is target file exists in target account ?
-      FOUND.FLAG = @FALSE
-      FOUND.FLAG  = (TRANS(DC$QP.VOC, VOC.TARGET, 1, "X") # "")
-      IF NOT(FOUND.FLAG) THEN 
-        RESPONSE = ER$FNF
-        RETURN 
-      END 
-
-
-!-- Common validations.
-250: 
-
-!---- Is the file already exists in VOC ?
-      FOUND.FLAG = @FALSE
-      FOUND.FLAG  = (TRANS("VOC", VOC.NAME, 1, "X") # "")
-      IF NOT(FOUND.FLAG) THEN 
-        RESPONSE = ER$EXISTS
-        RETURN 
-      END 
-
-
-* 4) Create the File/Q-Pointer
-* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-!-- Create file 
-    IF F.FLAG THEN 
-        EXECUTE "CREATE.FILE ":VOC.NAME:" ":VOC.FTYPE CAPTURING JUNK
-        RESPONSE = 0
-        RETURN 
-    END 
-
-
-!-- Create Q-Pointer
-    IF Q.FLAG THEN 
-        VOC.ITEM = "Q":@AM:VOC.ACCOUNT:@AM:VOC.TARGET
-        WRITE VOC.ITEM TO @VOC, VOC.NAME
-        RESPONSE = 0 
-        RETURN 
-    END 
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 !---- At this point, something went wrong 
     RESPONSE = ER$FAILED
