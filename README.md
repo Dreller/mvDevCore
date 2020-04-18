@@ -9,6 +9,7 @@ This project exists to supply various tools for developers in MV systems.
 
 ## Actually working on... 
 Creating DICT items from a flat file.
+Oh, and lost some code using git commands.  Have to rebuild some.
 
 ### Goal
 - Create files, DICT items and records from a simple list of items, to help creating required artifacts.
