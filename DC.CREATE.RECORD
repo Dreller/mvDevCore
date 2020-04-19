@@ -1,0 +1,110 @@
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Name:     DC.CREATE.RECORD
+* Type:     Program
+* Author:   dreller
+* Date:     Apr 13, 2020
+* Git:      mvDevCore
+* System:   openQM 3.4.18
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* Create records.  Pass to DC.CREATE.RECORD.SUBR.
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+* 
+* Calling methods:
+* - DC.CREATE.RECORD
+*   Will create records defined in 'dcArtifRecs.txt' file.
+* - DC.CREATE.RECORD {filename}
+*   Will create records defined in {/path/to/file}
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+EQU EQU$MYNAME      TO "DC.CREATE.RECORD"
+
+! Pre-actions
+    HEAD = ""
+    HEAD<1> = "Record creator"
+    CALL DC.HEAD(HEAD)
+
+! Program mainline
+    GOSUB 1000  ;* Get the file from sentence
+    GOSUB 2000  ;* Validate the file
+    GOSUB 3000  ;* Open the file
+
+! Post-actions 
+    !undefined
+    
+RETURN
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+! Get the file from sentence
+1000:
+
+    FILE.PATH = ""
+    ERR.TEMP  = ""
+    CALL DC.SENTENCE.SUBR(SENTENCE(), EQU$MYNAME, FILE.PATH, ERR.TEMP)
+
+!---- If no file is passed, use the default one
+        IF FILE.PATH = "" THEN
+            FILE.PATH = @PATH:@DS:"DEVCORE.PGM":@DS:"dcArtifFiles.txt"
+        END
+RETURN 
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Validate the target file 
+2000:
+
+!-- Is the file exists ?
+    VALID.FLAG = OSPATH(FILE.PATH, 2)
+    IF NOT(VALID.FLAG) THEN 
+        DISPLAY "Path not found: ":FILE.PATH
+        RETURN
+    END
+
+!-- If it's a real file (not a directory)
+    VALID.FLAG = OSPATH(FILE.PATH, 16)
+    IF NOT(VALID.FLAG) THEN 
+        DISPLAY "This is not a file: ":FILE.PATH 
+        RETURN
+    END
+RETURN 
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Open the file 
+3000: 
+
+    OPENSEQ FILE.PATH TO SOURCE.FILE THEN GOTO 3010
+    DISPLAY "Unable to open file: ":FILE.PATH 
+    RETURN  
+
+3010:
+    NEW.RECORD = ""
+    DESTINATION.FILE = ""
+    DESTINATION.ID = ""
+
+    LOOP
+        READSEQ SOURCE.ITEM FROM SOURCE.FILE ELSE GOTO 3020
+            
+        GOSUB  4000
+    REPEAT
+
+3020:
+    CLOSE SOURCE.FILE 
+
+RETURN
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Create the records 
+4000: 
+        IS.COMMENT = (SOURCE.ITEM[1,1]="*")
+
+
+!-- Transform SOURCE.ITEM to the required MV for CD.CREATE.RECORD.SUBR
+    RESPONSE    = ""
+    PARMS       = ""
+
+    DISPLAY "Building record..."
+    
+    CALL DC.CREATE.FILE.SUBR(PARMS, RESPONSE)
+    RESPONSE.TEXT = "OK"
+    ERROR.FLAG = (RESPONSE # "0")
+    IF ERROR.FLAG THEN 
+        CALL !ERRTEXT(RESPONSE.TEXT, RESPONSE)
+    END
+    DISPLAY RESPONSE.TEXT
+RETURN 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+END  
