@@ -90,7 +90,7 @@ RETURN
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Create the records 
 4000: 
-display ">>>":SOURCE.ITEM 
+
     IS.COMMENT = (SOURCE.ITEM[1,1]="*")
     IS.EMPTY = (LEN(SOURCE.ITEM)<2)
 
@@ -121,13 +121,19 @@ display ">>>":SOURCE.ITEM
         RETURN
     END
 
-    NEW.RECORD<-1> = TRIM(SOURCE.ITEM)
+    ATTR.VALUE = TRIM(SOURCE.ITEM)
+    ATTR.VALUE = CHANGE(ATTR.VALUE, "@VM", @VM)
+    ATTR.VALUE = CHANGE(ATTR.VALUE, "@SM", @SM)
+    ATTR.VALUE = TRIM(ATTR.VALUE)
+    ATTR.VALUE = TRIMS(ATTR.VALUE)
+
+    NEW.RECORD<-1> = ATTR.VALUE
 
 RETURN 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * Write record to file 
 5000: 
-    DISPLAY "Write record ":DESTINATION.ID:" to file ":DESTINATION.FILE:"... ":
+    DISPLAY "Write record ":DESTINATION.ID:" to file ":DESTINATION.FILE:"... "
     OPEN DESTINATION.FILE TO DEST.FILE ELSE STOP "UNABLE TO OPEN ":DESTINATION.FILE 
     WRITE NEW.RECORD TO DEST.FILE, DESTINATION.ID 
     CLOSE DEST.FILE

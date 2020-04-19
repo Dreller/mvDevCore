@@ -84,14 +84,21 @@ RETURN
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Create the file 
 4000: 
+!-- Validate if entry should be treated as a comment
+    SOURCE.ITEM = TRIM(SOURCE.ITEM)
+    IS.COMMENT = (SOURCE.ITEM[1,1]="*")
+    IS.EMPTY = (LEN(SOURCE.ITEM)<2)
 
+    IF IS.COMMENT OR IS.EMPTY THEN 
+        RETURN
+    END
 !-- Transform SOURCE.ITEM to the required MV for CD.CREATE.FILE.SUBR
     RESPONSE    = ""
     PARMS       = ""
-    PARMS<1>    = FIELD(SOURCE.ITEM,",", 1, 1)
-    PARMS<2>    = FIELD(SOURCE.ITEM,",", 2, 1)
-    PARMS<3>    = FIELD(SOURCE.ITEM,",", 3, 1)
-    PARMS<4>    = FIELD(SOURCE.ITEM,",", 4, 1)
+    PARMS<1>    = FIELD(SOURCE.ITEM,"|", 1, 1)
+    PARMS<2>    = FIELD(SOURCE.ITEM,"|", 2, 1)
+    PARMS<3>    = FIELD(SOURCE.ITEM,"|", 3, 1)
+    PARMS<4>    = FIELD(SOURCE.ITEM,"|", 4, 1)
 
     DISPLAY "Creating file, ":PARMS<1>:"-Type, Name '":PARMS<2>:"'...  ":
     

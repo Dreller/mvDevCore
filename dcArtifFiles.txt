@@ -1,1 +1,8 @@
-F,DEVCORE.TABLE,DYNAMIC,
+*   MV#     For a F-Type        For a Q-Type
+*   ---     ------------------- -------------------
+*   1       F                   Q
+*   2       File name           Q-Pointer name
+*   3       DYNAMIC|DIRECTORY   Target Account name
+*   4       -                   Target File Name
+
+F|DEVCORE.TABLE|DYNAMIC|
