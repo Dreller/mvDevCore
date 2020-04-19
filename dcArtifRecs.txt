@@ -1,0 +1,31 @@
+* Records to create
+* Start a new record with the keyword $$NEW
+* End a record with the keyword       $$END
+* A block should contain a line that specify the File, like that: $$FILE name.of.file
+* Also, a block should contains a line for the record ID, like that:L $$ID record.id
+* Example:
+* $$NEW
+* Value for attribute 1
+* Value for attribute 2
+* Value for attribute 3
+* ...
+* $$FILE PRODUCTS
+* $$ID 9509983736
+* $$END
+* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+* Default Package in DEVCORE.TABLE
+$$NEW
+$$FILE DEVCORE.TABLE 
+$$ID PACK*DEVCORE
+Core package for DEVCORE programs.
+$$END 
+
+* Test
+$$NEW 
+$$FILE VOC 
+$$ID SAYHELLO
+PA  
+CLR
+BLOCK.TERM HELLO
+$$END
