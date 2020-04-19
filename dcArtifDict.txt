@@ -15,4 +15,4 @@
 
 DEVCORE.TABLE|S|0|L|15|MCU|PACK.NAME|Package|Package name|A;N(@ID)(G1*1)|S|
 DEVCORE.TABLE|D|1|L|20||PACK.DESC|Description|Package description|||S|
-DEVCORE.TABLE|X|0| |  ||$$ABC||Test for X-Type|Hello my data!|S|
+DEVCORE.TABLE|D|2|L|20||PACK.PGMS|Programs|Package programs|||M|
