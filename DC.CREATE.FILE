@@ -84,7 +84,13 @@ RETURN
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Create the file 
 4000: 
+!-- Validate if entry should be treated as a comment
+    IS.COMMENT = (SOURCE.ITEM[1,1]="*")
+    IS.EMPTY = (LEN(SOURCE.ITEM)<2)
 
+    IF IS.COMMENT OR IS.EMPTY THEN 
+        RETURN
+    END
 !-- Transform SOURCE.ITEM to the required MV for CD.CREATE.FILE.SUBR
     RESPONSE    = ""
     PARMS       = ""
