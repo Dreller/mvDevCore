@@ -1,0 +1,18 @@
+*   MV#     Description
+*   ---     ---------------------------------------------------------
+*   1       File in which the DICT item will be created.
+*   2       DICT Type.  Valid types are: D, S, A, I, X, PH.
+*   3       Attribute Number (for D, A, S).
+*   4       Justification/Alignment (L, R, T).
+*   5       Width (number from 1 to 100).
+*   6       Conversion (MCU, D2, etc.)
+*   7       Attribute Name.
+*   8       Column title.
+*   9       Short description (non-mandatory).
+*  10       Formula (Types S and I), Data (Type X), Phrase (Type PH).
+*  11       Multivalue flag:  M or S.
+*  12       Association with other attributes.
+
+DEVCORE.TABLE|S|0|L|15|MCU|PACK.NAME|Package|Package name|A;N(@ID)(G1*1)|S|
+DEVCORE.TABLE|D|1|L|20||PACK.DESC|Description|Package description|||S|
+DEVCORE.TABLE|X|0| |  ||$$ABC||Test for X-Type|Hello my data!|S|
