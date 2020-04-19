@@ -121,7 +121,11 @@ display ">>>":SOURCE.ITEM
         RETURN
     END
 
-    NEW.RECORD<-1> = TRIM(SOURCE.ITEM)
+    ATTR.VALUE = TRIM(SOURCE.ITEM)
+    ATTR.VALUE = CHANGE(ATTR.VALUE, "@VM", @VM)
+    ATTR.VALUE = CHANGE(ATTR.VALUE, "@SM", @SM)
+
+    NEW.RECORD<-1> = ATTR.VALUE
 
 RETURN 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
