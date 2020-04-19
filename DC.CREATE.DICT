@@ -16,11 +16,17 @@
 *   Will create DICT items defined in {/path/to/file}
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+$INCLUDE DC.INC.H
 EQU EQU$MYNAME      TO "DC.CREATE.DICT"
+EQU EQU$MODE        TO "UPD"            ;* UPD/ADD
 
 ! Pre-actions
     HEAD = ""
-    HEAD<1> = "Dictionary creator/updater"
+    HEAD<1> = "Dictionary creator."
+    HEAD<2> = "Mode: Create new DICT items only."
+        IF EQU$MODE = "UPD" THEN 
+            HEAD<2> = "Mode: Recreate DICT items (overwrite if already existing)."
+        END
     CALL DC.HEAD(HEAD)
 
 ! Program mainline
@@ -82,20 +88,25 @@ RETURN
 
 RETURN
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-! Create the file 
+! Create the dict item 
 4000: 
+!-- Validate if entry should be treated
+    IS.COMMENT = (SOURCE.ITEM[1,1]="*")
+    IS.EMPTY = (LEN(SOURCE.ITEM)<2)
 
-!-- Transform SOURCE.ITEM to the required MV for CD.CREATE.FILE.SUBR
+    IF IS.COMMENT OR IS.EMPTY THEN 
+        RETURN
+    END
+
+!-- Transform SOURCE.ITEM to the required MV for CD.CREATE.DICT.SUBR
     RESPONSE    = ""
-    PARMS       = ""
-    PARMS<1>    = FIELD(SOURCE.ITEM,",", 1, 1)
-    PARMS<2>    = FIELD(SOURCE.ITEM,",", 2, 1)
-    PARMS<3>    = FIELD(SOURCE.ITEM,",", 3, 1)
-    PARMS<4>    = FIELD(SOURCE.ITEM,",", 4, 1)
+    PARMS       = CHANGE(SOURCE.ITEM, "|", @AM)
 
-    DISPLAY "Creating file, ":PARMS<1>:"-Type, Name '":PARMS<2>:"'...  ":
+    TEMP.TEXT = "Creating DICT, ":PARMS<DC$DICT.TYPE>
+    TEMP.TEXT:= "-Type, Name '":PARMS<DC$DICT.NAME>:"'...  "
+    DISPLAY TEMP.TEXT:
     
-    CALL DC.CREATE.FILE.SUBR(PARMS, RESPONSE)
+    CALL DC.CREATE.DICT.SUBR(PARMS, EQU$MODE, RESPONSE)
     RESPONSE.TEXT = "OK"
     ERROR.FLAG = (RESPONSE # "0")
     IF ERROR.FLAG THEN 
