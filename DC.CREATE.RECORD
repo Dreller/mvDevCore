@@ -42,7 +42,7 @@ RETURN
 
 !---- If no file is passed, use the default one
         IF FILE.PATH = "" THEN
-            FILE.PATH = @PATH:@DS:"DEVCORE.PGM":@DS:"dcArtifFiles.txt"
+            FILE.PATH = @PATH:@DS:"DEVCORE.PGM":@DS:"dcArtifRecs.txt"
         END
 RETURN 
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -75,6 +75,7 @@ RETURN
     NEW.RECORD = ""
     DESTINATION.FILE = ""
     DESTINATION.ID = ""
+    ATTR.NO = 1
 
     LOOP
         READSEQ SOURCE.ITEM FROM SOURCE.FILE ELSE GOTO 3020
@@ -89,22 +90,46 @@ RETURN
 * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Create the records 
 4000: 
-        IS.COMMENT = (SOURCE.ITEM[1,1]="*")
+display ">>>":SOURCE.ITEM 
+    IS.COMMENT = (SOURCE.ITEM[1,1]="*")
+    IS.EMPTY = (LEN(SOURCE.ITEM)<2)
 
-
-!-- Transform SOURCE.ITEM to the required MV for CD.CREATE.RECORD.SUBR
-    RESPONSE    = ""
-    PARMS       = ""
-
-    DISPLAY "Building record..."
-    
-    CALL DC.CREATE.FILE.SUBR(PARMS, RESPONSE)
-    RESPONSE.TEXT = "OK"
-    ERROR.FLAG = (RESPONSE # "0")
-    IF ERROR.FLAG THEN 
-        CALL !ERRTEXT(RESPONSE.TEXT, RESPONSE)
+    IF IS.COMMENT OR IS.EMPTY THEN 
+        RETURN
     END
-    DISPLAY RESPONSE.TEXT
+
+    IF SOURCE.ITEM[1,5] = "$$NEW" THEN 
+        NEW.RECORD = ""
+        DESTINATION.FILE = ""
+        DESTINATION.ID = ""
+        ATTR.NO = 1
+        RETURN
+    END
+
+    IF SOURCE.ITEM[1,6] = "$$FILE" THEN 
+        DESTINATION.FILE = TRIM(SOURCE.ITEM[7,999])
+        RETURN
+    END
+
+    IF SOURCE.ITEM[1,4] = "$$ID" THEN 
+        DESTINATION.ID = TRIM(SOURCE.ITEM[5,999])
+        RETURN
+    END
+
+    IF SOURCE.ITEM[1,5] = "$$END" THEN 
+        GOSUB 5000 
+        RETURN
+    END
+
+    NEW.RECORD<-1> = TRIM(SOURCE.ITEM)
+
 RETURN 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Write record to file 
+5000: 
+    DISPLAY "Write record ":DESTINATION.ID:" to file ":DESTINATION.FILE:"... ":
+    OPEN DESTINATION.FILE TO DEST.FILE ELSE STOP "UNABLE TO OPEN ":DESTINATION.FILE 
+    WRITE NEW.RECORD TO DEST.FILE, DESTINATION.ID 
+    CLOSE DEST.FILE
+RETURN 
 END  
