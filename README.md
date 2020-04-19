@@ -8,8 +8,7 @@ You are welcome to submit any kind of issue, I will do my best to answer and add
 This project exists to supply various tools for developers in MV systems.
 
 ## Actually working on... 
-Creating DICT items from a flat file.
-Oh, and lost some code using git commands.  Have to rebuild some.
+Fine tuning the actual code for a good start for the next steps :) 
 
 ### Goal
 - Create files, DICT items and records from a simple list of items, to help creating required artifacts.
@@ -17,7 +16,8 @@ Oh, and lost some code using git commands.  Have to rebuild some.
 ### What I have done 
 - [x] Built `DC.CREATE.FILE` that create Files and Q-pointers from a flat file.
 - [x] Added `DC.HEAD` to display a nice heading when starting a program.
-- [x] Built `DC.CREATE.DICT`that create DICT items (D, I, A, S, X and PH types).
+- [x] Built `DC.CREATE.DICT` that create DICT items (D, I, A, S, X and PH types).
+- [x] Build `DC.CREATE.RECORD` that create records in files.
 
 ### What I have learnt
 - Had to use `OPTION CATALOGUE.LOCAL` because openQM copied the program in a private space instead creating the VOC, or just use CATALOG file, program LOCAL for the same result.
