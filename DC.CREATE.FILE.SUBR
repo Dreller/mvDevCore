@@ -135,7 +135,7 @@ $INCLUDE SYSCOM ERR.H
 !---- Is the file already exists in VOC ?
       FOUND.FLAG = @FALSE
       FOUND.FLAG  = (TRANS("VOC", VOC.NAME, 1, "X") # "")
-      IF NOT(FOUND.FLAG) THEN 
+      IF FOUND.FLAG THEN 
         RESPONSE = ER$EXISTS
         RETURN 
       END 
