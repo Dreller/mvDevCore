@@ -8,7 +8,7 @@ You are welcome to submit any kind of issue, I will do my best to answer and add
 This project exists to supply various tools for developers in MV systems.
 
 ## Actually working on... 
-Fine tuning the actual code for a good start for the next steps :) 
+A way to manage program display (screens) that could work on QM and UV.  Wish me luck or send help :)
 
 ### Goal
 - Create files, DICT items and records from a simple list of items, to help creating required artifacts.
